@@ -1,0 +1,25 @@
+=====================================================================
+| Left Half                          | Right Half                 |
+|                                    |                            |
+| Here is the experience of the X/Y  | Tenure                     |
+| people you have selected with your | [SLIDER]                   |
+| sliders:                           |                            |
+|                                    | System Utilization         |
+| Their tenure of system use: X      | [SLIDER]                   |
+| (average), Y (top 10%)             |                            |
+|                                    | Re-entry Rate              |
+| Their system utilization percentage: X (average), Y (top 10%) | [SLIDER] |
+|                                    |                            |
+| Their re-entry rate into           | No. Consecutive Programs   |
+| homelessness: X (average), Y (top | [SLIDER]                   |
+| 10%)                               |                            |
+|                                    | Total Shelter Days         |
+| The number of consecutive programs | [SLIDER]                   |
+| used: X (average), Y (top 10%)     |                            |
+|                                    | Total Housing Days         |
+| Their total number of days spent   | [SLIDER]                   |
+| in shelter: X (average), Y (top 10%)|                            |
+|                                    |                            |
+| Their total number of days spent   |                            |
+| in housing: X (average), Y (top 10%)|                            |
+=====================================================================

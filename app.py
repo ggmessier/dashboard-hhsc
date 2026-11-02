@@ -1,123 +1,104 @@
 import dash
-from dash import dcc, html, Input, Output
+from dash import html, dcc, Input, Output
 import dash_bootstrap_components as dbc
+import plotly.graph_objs as go
 import pandas as pd
-import plotly.express as px
-import src.data_loader as dl  
+from src.layout import generate_sequence_fig, generate_pathways_tab, generate_people_tab, colors, integrate_tabs
+from src.callbacks import register_slider_callback
 
-# Load data
-startDate = pd.to_datetime('2025-01-01')
-endDate = pd.to_datetime('2027-01-01')
-
-tblWait = dl.calc_housing_wait_time(startDate,endDate)
-# Normalize and resample tblWait to match tbl_monthly's index structure
-tblWait_normalized = tblWait.set_index(tblWait.index.normalize())
-tblWait_monthly = tblWait_normalized.resample('M').sum()
-
-tbl = dl.calc_program_load(['Housing', 'Shelter'], startDate, endDate)
-tbl.set_index(tbl.index.normalize(), inplace=True)
-tbl_monthly = tbl.resample('M').sum()
-
-tblWait_monthly.index = tbl_monthly.index
-
-
-# Prepare slider options: one entry per month
-month_dates = list(tbl_monthly.index)
-month_labels = {i: d.strftime('%Y-%m') for i, d in enumerate(month_dates)}
-
-
+# Initialize the app with a Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
-# Calculate fixed y-axis range based on maximum value in the table
-max_value = tbl_monthly.values.max()
-y_max = max_value + 150
 
-app.layout = dbc.Container([
-    html.H1("Monthly Program Load Dashboard", className="mb-4"),
+# Function to perform data analysis
+def analyze_data():
+    # This is where you would put your actual data analysis logic
+    # For now, we'll return the same values as in your original code
+    sequence = [
+        "Shelter",
+        "Diversion",
+        "Housing", 
+        "Exit",
+    ]
     
-    dbc.Row([
-        dbc.Col([
-            html.Label("Select Month:"),
-            dcc.Slider(
-                id='month-slider',
-                min=0,
-                max=len(month_dates) - 1,
-                step=1,
-                value=len(month_dates) - 1,
-                allow_direct_input=False,
-                marks={i: label for i, label in month_labels.items() if i % max(1, len(month_dates) // 10) == 0},
-                tooltip={}
-            )
-        ], width=12)
-    ], className="mb-4"),
-
-    dbc.Row([
-        dbc.Col([
-            dcc.Graph(id='bar-chart')
-        ])
-    ], className="mb-4"),
-
-    dbc.Row([
-        dbc.Col([
-            html.H5(id='housed-value', className="mb-2"),
-            html.H5(id='diversion-value', className="mb-2"),
-            html.H5(id='avg-days-with-div', className="mb-2")
-        ])
-    ], className="mb-4")
-], fluid=True)
-
-
-@app.callback(
-    Output('bar-chart', 'figure'),
-    Output('housed-value', 'children'),
-    Output('diversion-value', 'children'),
-    Output('avg-days-with-div', 'children'),
-    Input('month-slider', 'value')
-)
-def update_chart(selected_idx):
-    selected_date = month_dates[selected_idx]
-    row = tbl_monthly.loc[selected_date]
+    # You can modify the sequence here based on your analysis
+    # For example, you might want to reorder or filter programs
+    # sequence = ["Housing", "Shelter", "Diversion", "Absence"]  # Example of reordering
     
-    # Get the categories from the column names
-    categories = tbl_monthly.columns.tolist()
-    
-    # Convert to long format preserving the actual column names
-    df = row.reset_index()
-    df.columns = ['Category', 'Value']
 
-    # Get Wait Time values for the selected month
-    wait_row = tblWait_monthly.loc[selected_date]
-    housed_val = wait_row['Housed']
-    diversion_val = wait_row['GotDiversion']
-    avgDaysWithDiv_val = wait_row['HousedWithDiversion']
-    avgDaysWithoutDiv_val = wait_row['HousedWithoutDiversion']
+    return {
+        'Sequence': sequence,
+        'AvgPrograms': 'Average: 3.2',
+        'Top10Percent': 'Top 10%: 5',
+        'Bottom10Percent': 'Bottom 10%: 1',
+        'EnterSystem': 'Enter the system for the first time is Program1 (45/120 entries, 37.5%).',
+        'ExitSystem': 'Exit the system for good is Program2 (32/80 exits, 40%).',
+        'ReenterSystem': 'Re-enter the system is Program3 (18/60 entries, 30%).',
+        'ExitBeforeReentry': 'Exit the system before a re-entry is Program4 (25/70 exits, 35.7%).',
+        'PeopleData': {
+            'Tenure': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            },
+            'Utilization': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            },
+            'ReentryRate': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            },
+            'ConsecutivePrograms': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            },
+            'ShelterDays': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            },
+            'HousingDays': {
+                'Min': 0,
+                'Max': 100,
+                'Initial': 50,
+                'Marks': {0: '0', 25: '25', 50: '50', 75: '75', 100: '100'}
+            }
+        },
+        'PeopleSummary': {
+            'Tenure': 'Days between first system entry and final system exit: 180 (average), 365 (top 10%)',
+            'Utilization': 'Percentage of those days they used the system: 75% (average), 95% (top 10%)',
+            'ReentryRate': 'Their re-entry rate into homelessness: 20% (average), 40% (top 10%)',
+            'ConsecutivePrograms': 'Number of program changes: 3 (average), 5 (top 10%)',
+            'ShelterDays': 'Total number of days spent in shelter: 180 (average), 365 (top 10%)',
+            'HousingDays': 'Total number of days spent in housing: 90 (average), 180 (top 10%)'
+        }
+    }
 
-    fig = px.bar(
-        df,
-        x='Category',
-        y='Value',
-        title=selected_date.strftime('%B %Y'),
-        text=df['Value'].apply(lambda x: f"{round(x)}").values
-    )
-    fig.update_layout(
-        xaxis_title=None, 
-        yaxis_title="Average Daily Program Load", 
-        showlegend=False, 
-        yaxis=dict(range=(0, y_max))
-    )
-    fig.update_traces(
-        texttemplate='%{text}', 
-        textposition='outside', 
-        textfont=dict(size=20),
-        selector=dict(type='bar')
-    )
-    fig.update_xaxes(tickfont=dict(size=20))
 
-    return fig, f"Housed this Month: {round(housed_val)}", f"Housed this Month with Diversion: {round(diversion_val)}", f"People housed waited {round(avgDaysWithDiv_val)} days."
+# Perform front end analysis.
+analysisResults = analyze_data()
+
+# Create dashboard layout.
+seqFig = generate_sequence_fig(analysisResults['Sequence'])
+pathwaysTab = generate_pathways_tab(seqFig,analysisResults)
+peopleTab = generate_people_tab(analysisResults)
+integrate_tabs(app,pathwaysTab,peopleTab)
+
+
+# Register callbacks.
+register_slider_callback(app,analysisResults)
+
+
 
 if __name__ == '__main__':
-    # For development.
     app.run(debug=True)
-
-
-

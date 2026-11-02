@@ -1,12 +1,11 @@
-# Administrative Data Dashboard
+# Housing and Homelessness Data Dashboard
 
 ## Data Flow Pipeline
-1. `src/data_loader.py`: Loads, validates and pre-processes data queried from parquet files using DuckDB.
-2. `src/transforms.py`: Performs calculations on data tables to extract metrics.
-3. `src/components.py`: Pure functions returning layout objects and charts.
-4. `app.py`: Assembles layout, handles user interaction state.
+1. `app.py`: Dash dashboard entry point.
+1. `src/database.py`: Loads and pre-processes data queried from parquet files using DuckDB.
+2. `src/analysis.py`: Performs pandas and numpy analysis on the database data.
+2. `src/ui.py`: Support functions for the dash user interface.
 
 ## Tech Stack
-- Data processing: Pandas / DuckDB
-- Charts: Plotly Express
+- Data processing: DuckDB / Pandas / Numpy
 - Dashboard framework: Dash

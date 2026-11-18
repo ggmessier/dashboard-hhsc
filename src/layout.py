@@ -80,133 +80,126 @@ def generate_sequence_fig(sequence):
     return fig
 
 
-def generate_pathways_tab(seqFig,analysisResults):
-    # Pathways Tab Content
-    pathwaysTab = dbc.Container([
-        dbc.Row([
-            dbc.Col(html.H4("The most common pathway through the system:"), width=12)
-        ]),
-        dbc.Row([
-            dbc.Col(dcc.Graph(figure=seqFig), width=12)
-        ]),
-        dbc.Row([
-            # Left Half with border and rounded corners - now using divs for editable content
-            dbc.Col([
-                html.H5("Number of times a person changes programs along their pathway:"),
-                html.P(id="AvgProgramsText", children=analysisResults['AvgPrograms'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="Top10PercentText", children=analysisResults['Top10Percent'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="Bottom10PercentText", children=analysisResults['Bottom10Percent'], style={'font-size': '20px', 'margin': '5px 15px'})
-            ], width=4, style={
-                'border': '2px solid black',
-                'border-radius': '15px',
-                'padding': '15px',
-                'margin': '10px',
-                'background-color': colors['CardBackground']
-            }),
-            # Right Half with border and rounded corners
-            dbc.Col([
-                html.H5("The most common place to..."),
-                html.P(analysisResults['EnterSystem'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(analysisResults['ExitSystem'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(analysisResults['ReenterSystem'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(analysisResults['ExitBeforeReentry'], style={'font-size': '20px', 'margin': '5px 15px'})
-            ], width=6, style={
-                'border': '2px solid black',
-                'border-radius': '15px',
-                'padding': '15px',
-                'margin': '10px',
-                'background-color': colors['CardBackground']
-            })
-        ], justify="center")  # Ensure columns are aligned side by side
-    ], fluid=True)
-
-    return pathwaysTab
 
 def generate_people_tab(analysisResults):
     # People Tab Content
     peopleTab = dbc.Container([
         dbc.Row([
-            # Left Half
-            dbc.Col([
-                html.H5("2,134 people in my community experienced homelessness in the past 3 months."),
-                html.P("Here is the experience of the 2,134/2,134 people you have selected with your sliders:", style={'font-size': '20px', 'margin': '5px 0px'}),
-                html.P(id="TenureSummary", children=analysisResults['PeopleSummary']['Tenure'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="UtilizationSummary", children=analysisResults['PeopleSummary']['Utilization'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="ReentrySummary", children=analysisResults['PeopleSummary']['ReentryRate'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="ConsecutiveSummary", children=analysisResults['PeopleSummary']['ConsecutivePrograms'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="ShelterSummary", children=analysisResults['PeopleSummary']['ShelterDays'], style={'font-size': '20px', 'margin': '5px 15px'}),
-                html.P(id="HousingSummary", children=analysisResults['PeopleSummary']['HousingDays'], style={'font-size': '20px', 'margin': '5px 15px'})
-            ], width=6, style={
+            html.H5(analysisResults['PeopleHeader'], style={'justify': 'center'})
+            ], justify='center', style={
                 'border': '2px solid black',
                 'border-radius': '15px',
                 'padding': '15px',
                 'margin': '10px',
                 'background-color': colors['CardBackground']
             }),
+        dbc.Row([
             # Right Half
             dbc.Col([
-    #            html.H5("Sliders for System Analysis"),
+                html.H5("Use the sliders to select the people you are interested in:", style={'font-size': '20px', 'margin': '5px 0px'}),
                 html.Div([html.Label("Days between first system entry and final exit.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['Tenure']['Min'], 
-                                    analysisResults['PeopleData']['Tenure']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['Tenure']['Initial'], 
-                                    marks=analysisResults['PeopleData']['Tenure']['Marks'], 
-                                    id='TenureSlider')]),
-                html.Div([html.Label("Percentage of days utilizing the system.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['Utilization']['Min'], 
-                                    analysisResults['PeopleData']['Utilization']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['Utilization']['Initial'], 
-                                    marks=analysisResults['PeopleData']['Utilization']['Marks'], 
-                                    id='UtilizationSlider')]),
-                html.Div([html.Label("Homelessness re-entry rate.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['ReentryRate']['Min'], 
-                                    analysisResults['PeopleData']['ReentryRate']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['ReentryRate']['Initial'], 
-                                    marks=analysisResults['PeopleData']['ReentryRate']['Marks'], 
-                                    id='ReentrySlider')]),
-                html.Div([html.Label("Number of program transitions.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['ConsecutivePrograms']['Min'], 
-                                    analysisResults['PeopleData']['ConsecutivePrograms']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['ConsecutivePrograms']['Initial'], 
-                                    marks=analysisResults['PeopleData']['ConsecutivePrograms']['Marks'], 
-                                    id='ConsecutiveSlider')]),
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['Tenure']['Min'], 
+                            max=analysisResults['PeopleSlider']['Tenure']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['Tenure']['Initial'][0], analysisResults['PeopleSlider']['Tenure']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['Tenure']['Marks'], 
+                            id='TenureSlider')]),
+                html.Div([html.Label("Percentage of days utilizing programs and supports.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['Utilization']['Min'], 
+                            max=analysisResults['PeopleSlider']['Utilization']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['Utilization']['Initial'][0], analysisResults['PeopleSlider']['Utilization']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['Utilization']['Marks'], 
+                            id='UtilizationSlider')]),
+                html.Div([html.Label("Number of times homelessness is exited and re-entered.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['Reentries']['Min'], 
+                            max=analysisResults['PeopleSlider']['Reentries']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['Reentries']['Initial'][0], analysisResults['PeopleSlider']['Reentries']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['Reentries']['Marks'], 
+                            id='ReentrySlider')]),
+                html.Div([html.Label("Number of transitions between agencies or programs.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['ConsecutivePrograms']['Min'], 
+                            max=analysisResults['PeopleSlider']['ConsecutivePrograms']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['ConsecutivePrograms']['Initial'][0], analysisResults['PeopleSlider']['ConsecutivePrograms']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['ConsecutivePrograms']['Marks'], 
+                            id='ConsecutiveSlider')]),
                 html.Div([html.Label("Total days spent in shelter.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['ShelterDays']['Min'], 
-                                    analysisResults['PeopleData']['ShelterDays']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['ShelterDays']['Initial'], 
-                                    marks=analysisResults['PeopleData']['ShelterDays']['Marks'], 
-                                    id='ShelterSlider')]),
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['ShelterDays']['Min'], 
+                            max=analysisResults['PeopleSlider']['ShelterDays']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['ShelterDays']['Initial'][0], analysisResults['PeopleSlider']['ShelterDays']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['ShelterDays']['Marks'], 
+                            id='ShelterSlider')]),
                 html.Div([html.Label("Total days spent in housing.", style={'display': 'inline-block', 'width': '500px', 'color': colors['DarkText']}), 
-                        dcc.Slider(analysisResults['PeopleData']['HousingDays']['Min'], 
-                                    analysisResults['PeopleData']['HousingDays']['Max'], 
-                                    1, 
-                                    value=analysisResults['PeopleData']['HousingDays']['Initial'], 
-                                    marks=analysisResults['PeopleData']['HousingDays']['Marks'], 
-                                    id='HousingSlider')]),
+                        dcc.RangeSlider(
+                            min=analysisResults['PeopleSlider']['HousingDays']['Min'], 
+                            max=analysisResults['PeopleSlider']['HousingDays']['Max'], 
+                            step=1, 
+                            value=[analysisResults['PeopleSlider']['HousingDays']['Initial'][0], analysisResults['PeopleSlider']['HousingDays']['Initial'][1]], 
+                            marks=analysisResults['PeopleSlider']['HousingDays']['Marks'], 
+                            id='HousingSlider')]),
             ],width=4, style={
                 'border': '2px solid black',
                 'border-radius': '15px',
                 'padding': '15px',
                 'margin': '10px',
                 'background-color': colors['CardBackground']
-            })
-        ], justify="center")
+            }),
+            # Left Half
+            dbc.Col([
+                html.H5(id='AccessSummHeader', children=analysisResults['PeopleWho']['Header'], style={'font-size': '20px', 'margin': '5px 0px'}),
+                html.P(id="AccessSummTenure", children=analysisResults['PeopleWho']['Tenure'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="AccessSummUtilization", children=analysisResults['PeopleWho']['Utilization'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="AccessSummReentries", children=analysisResults['PeopleWho']['Reentries'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="AccessSummConsecPrgs", children=analysisResults['PeopleWho']['ConsecutivePrograms'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="AccessSummShelterDays", children=analysisResults['PeopleWho']['ShelterDays'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="AccessSummHousingDays", children=analysisResults['PeopleWho']['HousingDays'], style={'font-size': '20px', 'margin': '5px 15px'})
+            ], width=6, style={
+                'border': '2px solid black',
+                'border-radius': '15px',
+                'padding': '15px',
+                'margin': '10px',
+                'background-color': colors['CardBackground']
+            }),
+
+        ], justify="center"),
+
+        dbc.Row([
+            # Add a pull down menu for "most likely", "2nd most likely", "3rd most likely"
+            dbc.Col([
+                html.H5(id='LocSummHeader',children=analysisResults['PeopleWhere']['Header'],  style={'font-size': '20px', 'margin': '5px 0px'}),
+                html.P(id="LocSummEntry", children=analysisResults['PeopleWhere']['FirstEntry'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="LocSummWhereIn", children=analysisResults['PeopleWhere']['InSystem'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="LocSummNumReentries", children=analysisResults['PeopleWhere']['NumReentries'], style={'font-size': '20px', 'margin': '5px 15px'}),
+                html.P(id="LocSummWhereReentry", children=analysisResults['PeopleWhere']['ReenterSystem'], style={'font-size': '20px', 'margin': '5px 30px'}),
+                html.P(id="LocSummWhereAbsence", children=analysisResults['PeopleWhere']['SystemAbsence'], style={'font-size': '20px', 'margin': '5px 30px'}),
+            ])
+            ], justify='center', style={
+                'border': '2px solid black',
+                'border-radius': '15px',
+                'padding': '15px',
+                'margin': '10px',
+                'background-color': colors['CardBackground']
+            }),
+
+
     ], fluid=True)
 
     return peopleTab
 
 
-def integrate_tabs(app,pathwaysTab,peopleTab):
+def integrate_tabs(app,peopleTab):
     # Integrate tabs.
     app.layout = dbc.Container([
         dbc.Tabs([
-            dbc.Tab(label="Pathways", children=pathwaysTab, tab_id="TabPathways"),
+#            dbc.Tab(label="Pathways", children=pathwaysTab, tab_id="TabPathways"),
             dbc.Tab(label="People", children=peopleTab, tab_id="TabPeople")
-        ], id="Tabs", active_tab="TabPathways", style={'backgroundColor': colors['Background']})
+        ], id="Tabs", active_tab="TabPeople", style={'backgroundColor': colors['Background']})
     ], fluid=True)
-

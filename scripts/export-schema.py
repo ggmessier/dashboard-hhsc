@@ -2,7 +2,7 @@ import duckdb
 
 con = duckdb.connect()
 tables = {
-    "main": "data/MasterTable-2026_09_02.parquet"
+    "main": "data/SHHAd-System-Level-2026_11_03.parquet"
 }
 
 schema_text = "# Database Schema Reference\n\n"

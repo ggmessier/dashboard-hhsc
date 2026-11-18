@@ -1,116 +1,117 @@
+"""
+Database module for handling DuckDB connections and parquet file operations.
+This module provides functions to connect to DuckDB, read parquet files,
+and perform initial data preprocessing.
+"""
+
 import duckdb
 import pandas as pd
-import numpy as np
+from typing import Optional, Dict, Any, List
+import logging
 
-def load_table(serviceType,startDate,endDate):
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    con = duckdb.connect(database=':memory:')
-    startDateStr = startDate.strftime("%Y-%m-%d")
-    endDateStr = endDate.strftime("%Y-%m-%d")
+# TODO: Figure out how to disable info but allow errors.
+#logger.disabled = True
+
+
+class ParquetDataManager:
+    """
+    Class to manage DuckDB loading and querying of parquet files.
+    """
     
-
-    query = f"""
-    SELECT *
-    FROM "data/MasterTable-2026_09_02.parquet"
-    WHERE ServiceType = '{serviceType}' AND (
-       ( StartDate >= '{startDateStr}'::TIMESTAMP_NS AND EndDate <= '{endDateStr}'::TIMESTAMP_NS ) 
-       OR ( EndDate >= '{startDateStr}'::TIMESTAMP_NS AND EndDate <= '{endDateStr}'::TIMESTAMP_NS )
-       OR ( StartDate >= '{startDateStr}'::TIMESTAMP_NS AND StartDate <= '{endDateStr}'::TIMESTAMP_NS )
-    );
-    """
-
-    tbl = con.execute(query).fetch_df()
-    tbl.set_index('__index_level_0__', inplace=True)
-
-    con.close()
-
-    return tbl
-
-
-def load_full_table(serviceType):
-
-    con = duckdb.connect(database=':memory:')
-
-    query = f"""
-    SELECT *
-    FROM "data/MasterTable-2026_09_02.parquet"
-    WHERE ServiceType = '{serviceType}';
-    """
-
-    tbl = con.execute(query).fetch_df()
-    tbl.set_index('__index_level_0__', inplace=True)
-
-    con.close()
-
-    return tbl
-
-def calc_housing_wait_time(startDate,endDate):
-
-    # Determine first date of entry.
-    tblShlt = load_full_table('Shelter')
-    firstDay = tblShlt.groupby('PersonId').StartDate.min()
-
-    # Determine diversion day.
-    tblDiv = load_full_table('Diversion')
-    divDay = tblDiv.groupby('PersonId').StartDate.min()
-    divIds = divDay.index.to_numpy()
-
-    # Determine housing entry day.
-    tblHousing = load_full_table('Housing')
-    hsngDay = tblHousing.groupby('PersonId').StartDate.min()
-
-    # Determine wait time.
-    dateIndex = pd.date_range(startDate, endDate+pd.Timedelta('31D'), freq='M').normalize()
-    dateIndex += pd.offsets.MonthEnd(0)
-
-    tblWait = {
-        'Housed': np.zeros(len(dateIndex)),
-        'GotDiversion': np.zeros(len(dateIndex)),
-        'HousedWithDiversion': np.zeros(len(dateIndex)),
-        'HousedWithoutDiversion': np.zeros(len(dateIndex))
-    }
-
-    for i,day in enumerate(dateIndex):
-        housedIds = hsngDay[ (hsngDay >= day-pd.Timedelta('30D')) & (hsngDay < day) ].index.to_numpy()
-        timeToHsng = (hsngDay[housedIds] - firstDay[housedIds]).dt.days
-        housedWithDiv = timeToHsng.index.isin(divIds)
-
-        tblWait['Housed'][i] = len(housedIds)
-        tblWait['GotDiversion'][i] = np.sum( np.isin(housedIds,divIds) ) 
-        tblWait['HousedWithDiversion'][i] = timeToHsng[housedWithDiv].mean()
-        tblWait['HousedWithoutDiversion'][i] = timeToHsng[~housedWithDiv].mean()
-
-    return pd.DataFrame(tblWait,index=dateIndex)
-
-
-
-def calc_program_load(serviceTypes,startDate,endDate):
-
-    tblDict = {}
-    for serviceType in serviceTypes:
-
-        tbl = load_table(serviceType,startDate,endDate)
-
-        nDays = (tbl.EndDate.max() - tbl.StartDate.min()).days + 2
-        load = np.zeros(nDays, dtype=np.int32)
-
-        startDays = (tbl.StartDate - tbl.StartDate.min()).dt.days.to_numpy()
-        endDays = (tbl.EndDate - tbl.StartDate.min()).dt.days.to_numpy()+1
+    def __init__(self, databasePath: str = ":memory:"):
+        """
+        Initialize DuckDB connection.
         
-        np.add.at( load, startDays, 1 )
-        np.add.at( load, endDays, -1 )
-        load = np.cumsum(load)
+        Args:
+        databasePath (str): Path to database file (default is in-memory).
+        """
+        try:
+            self.conn = duckdb.connect(database=databasePath)
+            logger.info(f"Successfully connected to DuckDB at {databasePath}")
+            self.loadedTables = set()
 
-        leftBuffer = ( startDate - tbl.StartDate.min() ).days 
-        rightBuffer = ( tbl.EndDate.max() - endDate ).days + 1
+        except Exception as e:
+            logger.error(f"Failed to connect to DuckDB: {e}")
+            raise
 
-        tblDict[serviceType] = load[leftBuffer:-rightBuffer]
+    def __del__(self):
+        """
+        Close the DuckDB connection.
+        """
+        try:
+            self.conn.close()
+            logger.info("DuckDB connection closed successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to close DuckDB connection: {e}")
+            raise
 
-    dateIndex = pd.date_range(startDate, endDate, freq='D').normalize()
-    dateIndex += pd.offsets.MonthEnd(0)
-    tbl = pd.DataFrame(tblDict,index=dateIndex)
+    
+    def load_table(self, parquetFile: str, tableName: str) -> None:
+        """
+        Load a parquet file into a table.  Ignored if table already loaded.
+        
+        Args:
+            parquetFile (str): Parquet file (full path) containing table.
+            tableName (str): Table name for later queries.
+        """
+        try:
+            if tableName not in self.loadedTables:
+                query = f"CREATE OR REPLACE TABLE {tableName} AS SELECT * FROM read_parquet('{parquetFile}')"
+                self.conn.execute(query)
+                self.loadedTables.add(tableName)
+                logger.info(f"Successfully loaded {parquetFile} into table {tableName}.")
+            else:
+                logger.info(f"Load ignored, table {tableName} already loaded.")
 
-    return tbl.groupby(level=0).mean()
+
+        except Exception as e:
+            logger.error(f"Failed to load parquet file {parquetFile} as {tableName}: {e}")
+            raise
+
+
+
+    def execute_query(self, query: str) -> pd.DataFrame:
+        """
+        Execute a SQL query and return results as a pandas DataFrame.  Query must
+        be performed on a table that has already been loaded using self.load_table().
+        
+        Args:
+            query (str): SQL query to execute
+            
+        Returns:
+            pd.DataFrame: Query results as pandas DataFrame
+        """
+        try:            
+            result = self.conn.execute(query).fetchdf()
+            logger.info(f"Query executed successfully: {query}")
+            return result
+        except Exception as e:
+            logger.error(f'Failed to execute query: {e}')
+            raise
+
+
+    def get_table_info(self, tableName: str) -> pd.DataFrame:
+        """
+        Get information about a table's structure.  tableName must already have been 
+        loaded with self.load_table().
+        
+        Args:
+            table_name (str): Name of the table
+            
+        Returns:
+            pd.DataFrame: Table schema information
+        """
+        try:
+            query = f"DESCRIBE {tableName}"
+            return self.execute_query(query)
+        except Exception as e:
+            logger.error(f"Failed to get table info for {table_name}: {e}")
+            raise
 
 
 

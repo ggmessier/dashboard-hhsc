@@ -1,17 +1,17 @@
 # Database Schema Reference
 
 ## Table: main
-File: `data/MasterTable-2026_09_02.parquet`
+File: `data/SHHAd-System-Level-2026_11_03.parquet`
 ```sql
-PersonId BIGINT         -- Primary ID for unique individuals
-ServiceType VARCHAR     -- Category or type of administrative service
-ServiceID BIGINT        -- Unique identifier for the specific service instance/program
-StartDate TIMESTAMP_NS  -- Service entry/enrollment timestamp
-EndDate TIMESTAMP_NS    -- Service exit/discharge timestamp
+PersonId BIGINT
+ServiceType VARCHAR
+StartDate TIMESTAMP_NS
+EndDate TIMESTAMP_NS
 FirstName VARCHAR
 LastName VARCHAR
 DOB TIMESTAMP_NS
-ProviderId BIGINT       -- Identifier for service provider
+ProviderId BIGINT
 ProviderName VARCHAR
-__index_level_0__ BIGINT  -- Internal index column (ignore in SQL queries)```
+__index_level_0__ BIGINT
+```
 

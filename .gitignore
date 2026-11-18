@@ -4,3 +4,4 @@ doc/wireframes/
 __pycache__
 *.swp
 *scratch*
+.vscode/

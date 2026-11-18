@@ -1,5 +1,8 @@
 # Housing and Homelessness Data Dashboard
 
+The code in this repository is provided for the public good and is released under the GNU General Public License Version 3 or, at your option, any later version.  For more information, see the [additional information](https://gnu.org/licenses) provided by the Free Software Foundation.
+
+
 ## Data Flow Pipeline
 1. `app.py`: Dash dashboard entry point.
 1. `src/database.py`: Loads and pre-processes data queried from parquet files using DuckDB.
@@ -32,39 +35,5 @@ Take note of the coding style and design objective documents located in the doc/
 The data you'll be working with is in the data/ directory.
 Do not generate any python code yet.
 ```
-
-
-        SELECT 
-            PersonId,
-            ProviderId,
-            StartDate,
-            EndDate,
-            -- Calculate days since first start date for each person
-            DATEDIFF(StartDate, MIN(StartDate) OVER (PARTITION BY PersonId)) AS StartDay,
-            -- Calculate duration in days
-            DATEDIFF(EndDate, StartDate) AS Duration,
-            -- Calculate gap between consecutive periods
-            /*
-                * COALESCE takes the first non-null value.  The first DATEDIFF will be null for the
-                * last entry which has a gap value of 0.  LEAD pulls the value of the next row
-                * of the column defined by the OVER statement.
-                */
-            COALESCE(
-                DATEDIFF(
-                    LEAD(StartDate) OVER (PARTITION BY PersonId ORDER BY StartDate),
-                    EndDate
-                ),
-                0
-            )
-            /*
-                DATEDIFF(
-                    MAX(EndDate) OVER (PARTITION BY PersonId),
-                    EndDate
-                )
-            */
-            ) AS Gap
-        FROM {tableName}
-        WHERE StartDate IS NOT NULL
-        ORDER BY PersonId, StartDate, EndDate
 
 
